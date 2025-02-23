@@ -15,28 +15,6 @@ else:
     print(f"Błąd pobierania danych: {response.status_code}")
     data_1 = []
 
-auctions_data_df = pd.DataFrame(data_1)
-auctions_data_df = auctions_data_df[auctions_data_df["dt"] > '2023-01-01']
-
-auction_data_df_dict = {
-'dt' : "Data",
-'auction_trading_volume' : "Wolumen obrotu",
-'auction_lots_count' : "Liczba pozycji",
-'auction_name' : "Nazwa aukcji",
-'auction_slug' : "Skrot nazwy aukcji"
-}
-
-auctions_data_df.rename(columns = auction_data_df_dict, inplace = True)
-auctions_data_df["Data"] = pd.to_datetime(auctions_data_df["Data"])
-
-auction_data_df_filter_table = (
-    auctions_data_df.groupby("Nazwa aukcji")[["Liczba pozycji","Wolumen obrotu"]]
-    .sum()
-    .reset_index()
-    )
-auction_data_df_filter_table["Wolumen obrotu"] = pd.to_numeric(auction_data_df_filter_table["Wolumen obrotu"], errors='coerce').round().astype(int)
-# auction_data_df_filter_table["Wolumen obrotu"] = auction_data_df_filter_table["Wolumen obrotu"].round().astype(int)
-
 url_2 = f"https://whiskyhunter.net/api{auctions_info}"
 response = requests.get(url_2)
 print(response)
@@ -46,6 +24,49 @@ else:
     print(f"Błąd pobierania danych: {response.status_code}")
     data_2 = []
 auctions_info_df = pd.DataFrame(data_2)
+
+
+
+auctions_data_df = pd.DataFrame(data_1)
+auctions_data_df = auctions_data_df[auctions_data_df["dt"] > '2023-01-01']
+
+auctions_info_df = auctions_info_df[["slug","url","base_currency"]]
+
+
+auction_data_df_dict = {
+'dt' : "Data",
+'auction_trading_volume' : "Wolumen obrotu",
+'auction_lots_count' : "Liczba pozycji",
+'auction_name' : "Nazwa aukcji",
+'auction_slug' : "Skrót nazwy aukcji"
+}
+
+auctions_data_df.rename(columns = auction_data_df_dict, inplace = True)
+
+auctions_data_df["Data"] = pd.to_datetime(auctions_data_df["Data"])
+auctions_data_df["Średnia wartość lota"] = (auctions_data_df["Wolumen obrotu"] / auctions_data_df["Liczba pozycji"]).astype(int)
+
+auction_info_df_dict = {
+    "slug" : "Skrót nazwy aukcji",
+    "base_currency" : "Waluta"
+}
+
+auctions_info_df.rename(columns= auction_info_df_dict, inplace = True)
+ 
+auction_table_data = pd.merge(auctions_data_df, auctions_info_df, on = "Skrót nazwy aukcji", how = "left")
+
+
+auction_table_data = auction_table_data.groupby("Nazwa aukcji").agg({
+    "Liczba pozycji": "sum",
+    "Wolumen obrotu": "sum",
+    "Średnia wartość lota" : "first",
+    "url" : "first",
+    "Waluta" : "first" 
+}).reset_index()
+
+auction_table_data["Wolumen obrotu"] = pd.to_numeric(auction_table_data["Wolumen obrotu"], errors='coerce').round().astype(int)
+
+
 
 
 url_3 = f"https://whiskyhunter.net/api{distilleries_info}"
