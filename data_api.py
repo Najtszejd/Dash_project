@@ -1,5 +1,6 @@
 import requests
 import pandas as pd
+import datetime
 
 auctions_data = "/auctions_data/"
 auctions_info = "/auctions_info"
@@ -54,6 +55,7 @@ auction_info_df_dict = {
 auctions_info_df.rename(columns= auction_info_df_dict, inplace = True)
  
 auction_table_data = pd.merge(auctions_data_df, auctions_info_df, on = "Skrót nazwy aukcji", how = "left")
+auction_table_data["Wolumen obrotu"] = pd.to_numeric(auction_table_data["Wolumen obrotu"], errors='coerce').astype(int)
 
 
 auction_table_data = auction_table_data.groupby("Nazwa aukcji").agg({
@@ -64,7 +66,7 @@ auction_table_data = auction_table_data.groupby("Nazwa aukcji").agg({
     "Waluta" : "first" 
 }).reset_index()
 
-auction_table_data["Wolumen obrotu"] = pd.to_numeric(auction_table_data["Wolumen obrotu"], errors='coerce').round().astype(int)
+
 
 
 
